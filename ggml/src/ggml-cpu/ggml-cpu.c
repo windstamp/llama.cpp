@@ -1199,9 +1199,34 @@ static void ggml_compute_forward_mul_mat_one_chunk(
     }
 }
 
+#define USE_EXTERNAL_MATMUL
+
+#if 0
+// External matmul function: c = a * b
+// a: m x k matrix (row-major)
+// b: k x n matrix (row-major)
+// c: m x n matrix (row-major)
+void external_matmul(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
+    // printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+    
+    // if(true) { return; }
+
+    for (int64_t i = 0; i < m; i++) {
+        for (int64_t j = 0; j < n; j++) {
+            float sum = 0.0f;
+            for (int64_t p = 0; p < k; p++) {
+                sum += a[i * k + p] * b[p * n + j];
+            }
+            c[i * n + j] = sum;
+        }
+    }
+}
+#endif
+
 void ggml_compute_forward_mul_mat(
         const struct ggml_compute_params * params,
               struct ggml_tensor * dst) {
+    // printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
 
     const struct ggml_tensor * src0 = dst->src[0];
     const struct ggml_tensor * src1 = dst->src[1];
@@ -1219,6 +1244,49 @@ void ggml_compute_forward_mul_mat(
     GGML_ASSERT(ne1 == ne11);
     GGML_ASSERT(ne2 == ne12);
     GGML_ASSERT(ne3 == ne13);
+
+#ifdef USE_EXTERNAL_MATMUL
+    #include "external_matmul.h"
+
+    // printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+    // printf("src0->type=%d (F32=%d), src1->type=%d (F32=%d)\n", 
+    //        src0->type, GGML_TYPE_F32, src1->type, GGML_TYPE_F32);
+    // printf("src0 contiguous=%d, src1 contiguous=%d\n", 
+    //        ggml_is_contiguous(src0), ggml_is_contiguous(src1));
+    // printf("ne02=%ld, ne03=%ld, ne12=%ld, ne13=%ld\n", 
+    //        ne02, ne03, ne12, ne13);
+    // printf("ith=%d, nth=%d\n", ith, nth);
+    // printf("Tensor shapes - src0:[%ld,%ld,%ld,%ld], src1:[%ld,%ld,%ld,%ld]\n",
+    //        ne00, ne01, ne02, ne03, ne10, ne11, ne12, ne13);
+    
+    if (src0->type == GGML_TYPE_F32 && 
+        src1->type == GGML_TYPE_F32 &&
+        ggml_is_contiguous(src0) && 
+        ggml_is_contiguous(src1) &&
+        ne02 == 1 && ne03 == 1 && ne12 == 1 && ne13 == 1 &&
+        ith == 0) {  // Only thread 0 does the work for external matmul
+        
+        // Extract dimensions: src0 is [ne00 x ne01], src1 is [ne10 x ne11]
+        // Result dst should be [ne01 x ne11]
+        int64_t m = ne01;  // rows of src0 (rows of result)
+        int64_t k = ne00;  // cols of src0 = rows of src1 (inner dimension)
+        int64_t n = ne11;  // cols of src1 (cols of result)
+        
+        GGML_ASSERT(ne10 == k);  // Verify inner dimensions match
+        
+        float *a = (float *)src0->data;
+        float *b = (float *)src1->data;
+        float *c = (float *)dst->data;
+        
+        external_matmul(c, a, b, m, n, k);
+        
+        // Other threads do nothing
+        return;
+    } else {
+        printf("Conditions NOT met, using default implementation\n");
+    }
+    // Fall through to default implementation if conditions not met
+#endif
 
     // we don't support permuted src0 or src1
     GGML_ASSERT(nb00 == ggml_type_size(src0->type));
