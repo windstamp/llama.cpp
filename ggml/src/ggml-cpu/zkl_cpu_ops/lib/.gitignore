@@ -1,0 +1,9 @@
+# Override parent .gitignore rules to include zkl CPU ops libraries
+# These are required dependencies for external_matmul functionality
+
+# Include static library
+!libcpu_ops.a
+
+# Include shared library and its symlinks
+!libcpu_ops.so
+!libcpu_ops.so.*

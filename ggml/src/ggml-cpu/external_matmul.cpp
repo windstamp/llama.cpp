@@ -1,17 +1,20 @@
 #include "external_matmul.h"
+#include "zkl/cpu_ops.h"
 
-#include <stdio.h>
-#include <stdbool.h>
+#include <cstdio>
 
 // External matmul function: c = a * b
 // a: m x k matrix (row-major)
 // b: k x n matrix (row-major)
 // c: m x n matrix (row-major)
+// 
+// This implementation calls zkl::matmul from the ZKL CPU ops library
 void external_matmul(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
     // printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
     
     // if(true) { return; }
 
+#if 0
     for (int64_t i = 0; i < m; i++) {
         for (int64_t j = 0; j < n; j++) {
             float sum = 0.0f;
@@ -21,4 +24,7 @@ void external_matmul(float *c, const float *a, const float *b, int64_t m, int64_
             c[i * n + j] = sum;
         }
     }
+#else
+    zkl::matmul(c, a, b, m, n, k);
+#endif
 }

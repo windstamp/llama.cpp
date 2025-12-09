@@ -22,7 +22,7 @@ function(ggml_add_cpu_backend_variant_impl tag_name)
     ggml_add_backend_library(${GGML_CPU_NAME})
 
     list (APPEND GGML_CPU_SOURCES
-        ggml-cpu/external_matmul.c
+        ggml-cpu/external_matmul.cpp
         ggml-cpu/ggml-cpu.c
         ggml-cpu/ggml-cpu.cpp
         ggml-cpu/repack.cpp
@@ -661,6 +661,29 @@ function(ggml_add_cpu_backend_variant_impl tag_name)
     target_sources(${GGML_CPU_NAME} PRIVATE ${GGML_CPU_SOURCES})
     target_compile_options(${GGML_CPU_NAME} PRIVATE ${ARCH_FLAGS})
     target_compile_definitions(${GGML_CPU_NAME} PRIVATE ${ARCH_DEFINITIONS})
+
+    # Link ZKL CPU Ops library for external_matmul
+    # Note: Using shared library (.so) instead of static library (.a)
+    set(ZKL_CPU_OPS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ggml-cpu/zkl_cpu_ops/lib")
+    set(ZKL_CPU_OPS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ggml-cpu/zkl_cpu_ops/include")
+    
+    # Static library linking (commented out)
+    # if(EXISTS "${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.a")
+    #     message(STATUS "Found ZKL CPU Ops library: ${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.a")
+    #     target_include_directories(${GGML_CPU_NAME} PRIVATE ${ZKL_CPU_OPS_INCLUDE_DIR})
+    #     target_link_libraries(${GGML_CPU_NAME} PRIVATE ${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.a)
+    # else()
+    #     message(WARNING "ZKL CPU Ops library not found at ${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.a")
+    # endif()
+    
+    # Shared library linking
+    if(EXISTS "${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.so")
+        message(STATUS "Found ZKL CPU Ops shared library: ${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.so")
+        target_include_directories(${GGML_CPU_NAME} PRIVATE ${ZKL_CPU_OPS_INCLUDE_DIR})
+        target_link_libraries(${GGML_CPU_NAME} PRIVATE ${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.so)
+    else()
+        message(WARNING "ZKL CPU Ops shared library not found at ${ZKL_CPU_OPS_LIB_DIR}/libcpu_ops.so")
+    endif()
 
     if (EMSCRIPTEN)
         set_target_properties(${GGML_CPU_NAME} PROPERTIES COMPILE_FLAGS "-msimd128")
