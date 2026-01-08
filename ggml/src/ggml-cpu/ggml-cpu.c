@@ -1307,7 +1307,7 @@ void ggml_compute_forward_mul_mat(
             }
             ggml_fp16_to_fp32_row((ggml_fp16_t *)src0_data, lhs, m * k);
             float* rhs = (float *)src1_data;
-            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            external_matmul_fp16(dst_data, lhs, rhs, m, n, k);
             free(lhs);
             return;
         }
