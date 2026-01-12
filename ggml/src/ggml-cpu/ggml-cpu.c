@@ -1277,6 +1277,9 @@ void ggml_compute_forward_mul_mat(
         void *src0_data = src0->data;
         void *src1_data = src1->data;
         float *dst_data = (float *)dst->data;
+
+        printf("m=%ld, n=%ld, k=%ld\n", m, n, k);
+        // std::cout << "m=" << m << ", n=" << n << ", k=" << k << std::endl;
         
         if(src1->type != GGML_TYPE_F32) {
             fprintf(stderr, "src1 only supports FP32\n");
@@ -1321,7 +1324,7 @@ void ggml_compute_forward_mul_mat(
             }
             ggml_bf16_to_fp32_row((ggml_bf16_t *)src0_data, lhs, m * k);
             float* rhs = (float *)src1_data;
-            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            external_matmul_bf16(dst_data, lhs, rhs, m, n, k);
             free(lhs);
             return;
         }
@@ -1337,7 +1340,7 @@ void ggml_compute_forward_mul_mat(
             // Q8_0 stores data in blocks of 32 elements
             dequantize_row_q8_0((const block_q8_0 *)src0_data, lhs, m * k);
             float* rhs = (float *)src1_data;
-            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            external_matmul_fp8_e4m3(dst_data, lhs, rhs, m, n, k);
             free(lhs);
             return;
         }

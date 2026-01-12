@@ -33,10 +33,22 @@ void external_matmul_fp32(float *c, const float *a, const float *b, int64_t m, i
     return external_matmul(c, a, b, m, n, k);
 }
 
+void external_matmul_tf32(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
+    return zkl::matmul_rpu_tf32(c, a, b, m, n, k);
+}
+
 void external_matmul_fp16(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
     return zkl::matmul_rpu_fp16(c, a, b, m, n, k);
 }
 
 void external_matmul_bf16(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
     return zkl::matmul_rpu_bf16(c, a, b, m, n, k);
+}
+
+void external_matmul_fp8_e4m3(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
+    return zkl::matmul_rpu_fp8_e4m3(c, a, b, m, n, k);
+}
+
+void external_matmul_fp8_e5m2(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
+    return zkl::matmul_rpu_fp8_e5m2(c, a, b, m, n, k);
 }

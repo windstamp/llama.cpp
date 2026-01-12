@@ -24,6 +24,10 @@ void matmul_cpu_fp32(float* c, const float* a, const float* b,
 void matmul_cpu_fp16(float* c, const float* a, const float* b, 
             int64_t m, int64_t n, int64_t k);
 
+
+void matmul_rpu_tf32(float* c, const float* a, const float* b, 
+            int64_t m, int64_t n, int64_t k);
+
 void matmul_rpu_fp16(float* c, const float* a, const float* b, 
             int64_t m, int64_t n, int64_t k);
 
