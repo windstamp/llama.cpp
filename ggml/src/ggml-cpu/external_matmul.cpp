@@ -30,7 +30,7 @@ void external_matmul(float *c, const float *a, const float *b, int64_t m, int64_
 }
 
 void external_matmul_fp32(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {
-    return external_matmul(c, a, b, m, n, k);
+    return zkl::matmul_cpu_fp32(c, a, b, m, n, k);
 }
 
 void external_matmul_tf32(float *c, const float *a, const float *b, int64_t m, int64_t n, int64_t k) {

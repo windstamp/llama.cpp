@@ -1297,7 +1297,8 @@ void ggml_compute_forward_mul_mat(
             // FP32 x FP32
             float* lhs = (float *)src0_data;
             float* rhs = (float *)src1_data;
-            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            // external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            external_matmul_tf32(dst_data, lhs, rhs, m, n, k);
             return;
         }
         else if (src0->type == GGML_TYPE_F16 && src1->type == GGML_TYPE_F32) {
@@ -1310,7 +1311,9 @@ void ggml_compute_forward_mul_mat(
             }
             ggml_fp16_to_fp32_row((ggml_fp16_t *)src0_data, lhs, m * k);
             float* rhs = (float *)src1_data;
-            external_matmul_fp16(dst_data, lhs, rhs, m, n, k);
+            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            // external_matmul_fp16(dst_data, lhs, rhs, m, n, k);
+            // external_matmul_bf16(dst_data, lhs, rhs, m, n, k);
             free(lhs);
             return;
         }
@@ -1324,12 +1327,13 @@ void ggml_compute_forward_mul_mat(
             }
             ggml_bf16_to_fp32_row((ggml_bf16_t *)src0_data, lhs, m * k);
             float* rhs = (float *)src1_data;
-            external_matmul_bf16(dst_data, lhs, rhs, m, n, k);
+            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            //external_matmul_bf16(dst_data, lhs, rhs, m, n, k);
             free(lhs);
             return;
         }
         else if (src0->type == GGML_TYPE_Q8_0 && src1->type == GGML_TYPE_F32) {
-            // printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+            printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
             // Q8_0 x FP32: Dequantize Q8_0 to FP32, then use FP32 matmul
             float* lhs = (float *)malloc(m * k * sizeof(float));
             if (!lhs) {
@@ -1340,12 +1344,14 @@ void ggml_compute_forward_mul_mat(
             // Q8_0 stores data in blocks of 32 elements
             dequantize_row_q8_0((const block_q8_0 *)src0_data, lhs, m * k);
             float* rhs = (float *)src1_data;
-            external_matmul_fp8_e4m3(dst_data, lhs, rhs, m, n, k);
+            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            // external_matmul_fp8_e4m3(dst_data, lhs, rhs, m, n, k);
+            // external_matmul_fp8_e5m2(dst_data, lhs, rhs, m, n, k);
             free(lhs);
             return;
         }
         else if (src0->type == GGML_TYPE_Q6_K && src1->type == GGML_TYPE_F32) {
-            // printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+            printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
             // Q6_K x FP32: Dequantize Q6_K to FP32, then use FP32 matmul
             float* lhs = (float *)malloc(m * k * sizeof(float));
             if (!lhs) {
@@ -1354,6 +1360,54 @@ void ggml_compute_forward_mul_mat(
             }
             // Dequantize Q6_K blocks to FP32
             dequantize_row_q6_K((const block_q6_K *)src0_data, lhs, m * k);
+            float* rhs = (float *)src1_data;
+            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            free(lhs);
+            return;
+        }
+        else if (src0->type == GGML_TYPE_Q5_0 && src1->type == GGML_TYPE_F32) {
+            printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+            // Q5_0 x FP32: Dequantize Q5_0 to FP32, then use FP32 matmul
+            float* lhs = (float *)malloc(m * k * sizeof(float));
+            if (!lhs) {
+                fprintf(stderr, "Failed to allocate memory for Q5_0->FP32 conversion\n");
+                return;
+            }
+            // Dequantize Q5_0 blocks to FP32
+            // Q5_0 stores data in blocks of 32 elements
+            dequantize_row_q5_0((const block_q5_0 *)src0_data, lhs, m * k);
+            float* rhs = (float *)src1_data;
+            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            free(lhs);
+            return;
+        }
+        else if (src0->type == GGML_TYPE_Q4_1 && src1->type == GGML_TYPE_F32) {
+            printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+            // Q4_1 x FP32: Dequantize Q4_1 to FP32, then use FP32 matmul
+            float* lhs = (float *)malloc(m * k * sizeof(float));
+            if (!lhs) {
+                fprintf(stderr, "Failed to allocate memory for Q4_1->FP32 conversion\n");
+                return;
+            }
+            // Dequantize Q4_1 blocks to FP32
+            // Q4_1 stores data in blocks of 32 elements
+            dequantize_row_q4_1((const block_q4_1 *)src0_data, lhs, m * k);
+            float* rhs = (float *)src1_data;
+            external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
+            free(lhs);
+            return;
+        }
+        else if (src0->type == GGML_TYPE_Q4_0 && src1->type == GGML_TYPE_F32) {
+            printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+            // Q4_0 x FP32: Dequantize Q4_0 to FP32, then use FP32 matmul
+            float* lhs = (float *)malloc(m * k * sizeof(float));
+            if (!lhs) {
+                fprintf(stderr, "Failed to allocate memory for Q4_0->FP32 conversion\n");
+                return;
+            }
+            // Dequantize Q4_0 blocks to FP32
+            // Q4_0 stores data in blocks of 32 elements
+            dequantize_row_q4_0((const block_q4_0 *)src0_data, lhs, m * k);
             float* rhs = (float *)src1_data;
             external_matmul_fp32(dst_data, lhs, rhs, m, n, k);
             free(lhs);
@@ -1376,7 +1430,7 @@ void ggml_compute_forward_mul_mat(
             return;
         }
         else if (src0->type == GGML_TYPE_Q3_K && src1->type == GGML_TYPE_F32) {
-            // printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
+            printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
             // Q3_K x FP32: Dequantize Q3_K to FP32, then use FP32 matmul
             float* lhs = (float *)malloc(m * k * sizeof(float));
             if (!lhs) {
@@ -1392,7 +1446,7 @@ void ggml_compute_forward_mul_mat(
             return;
         }
         else if (src0->type == GGML_TYPE_Q2_K && src1->type == GGML_TYPE_F32) {
-            printf("%s:%d | %s - Q2_K x FP32 (dequantizing to FP32)\n", __FILE__, __LINE__, __func__);
+            printf("%s:%d | %s\n", __FILE__, __LINE__, __func__);
             // Q2_K x FP32: Dequantize Q2_K to FP32, then use FP32 matmul
             float* lhs = (float *)malloc(m * k * sizeof(float));
             if (!lhs) {
