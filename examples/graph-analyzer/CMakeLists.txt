@@ -1,0 +1,7 @@
+set(TARGET graph-analyzer)
+add_executable(${TARGET} graph-analyzer.c)
+install(TARGETS ${TARGET} RUNTIME)
+target_link_libraries(${TARGET} PRIVATE ggml ${CMAKE_THREAD_LIBS_INIT})
+if(UNIX AND NOT APPLE)
+    target_link_libraries(${TARGET} PRIVATE m)
+endif()

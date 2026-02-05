@@ -7134,6 +7134,92 @@ void ggml_graph_print(const struct ggml_cgraph * cgraph) {
     GGML_LOG_INFO("========================================\n");
 }
 
+void ggml_graph_print_detailed(const struct ggml_cgraph * cgraph) {
+    GGML_LOG_INFO("=== DETAILED GRAPH ===\n");
+
+    GGML_LOG_INFO("n_nodes = %d\n", cgraph->n_nodes);
+    for (int i = 0; i < cgraph->n_nodes; i++) {
+        struct ggml_tensor * node = cgraph->nodes[i];
+
+        GGML_LOG_INFO(" - %3d: name='%s', op='%s', shape=[%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "], type=%s\n",
+                i,
+                ggml_get_name(node),
+                ggml_op_desc(node),
+                node->ne[0], node->ne[1], node->ne[2], node->ne[3],
+                ggml_type_name(node->type));
+    }
+
+    GGML_LOG_INFO("n_leafs = %d\n", cgraph->n_leafs);
+    for (int i = 0; i < cgraph->n_leafs; i++) {
+        struct ggml_tensor * node = cgraph->leafs[i];
+
+        GGML_LOG_INFO(" - %3d: name='%s', op='%s', shape=[%" PRId64 ", %" PRId64 "], type=%s\n",
+                i,
+                ggml_get_name(node),
+                ggml_op_desc(node),
+                node->ne[0], node->ne[1],
+                ggml_type_name(node->type));
+    }
+
+    GGML_LOG_INFO("========================================\n");
+}
+
+void ggml_graph_export_ops(const struct ggml_cgraph * cgraph, const char * filename) {
+    FILE * fp = fopen(filename, "w");
+    if (!fp) {
+        GGML_LOG_ERROR("Failed to open file '%s' for writing\n", filename);
+        return;
+    }
+
+    // Collect unique operation types
+    bool op_seen[GGML_OP_COUNT] = {false};
+    bool unary_op_seen[GGML_UNARY_OP_COUNT] = {false};
+    
+    // Track unique op names (for sorting)
+    const char * unique_ops[GGML_OP_COUNT + GGML_UNARY_OP_COUNT] = {NULL};
+    int unique_op_count = 0;
+
+    // Scan all nodes
+    for (int i = 0; i < cgraph->n_nodes; i++) {
+        struct ggml_tensor * node = cgraph->nodes[i];
+        
+        if (node->op == GGML_OP_UNARY) {
+            enum ggml_unary_op uop = ggml_get_unary_op(node);
+            if (!unary_op_seen[uop]) {
+                unary_op_seen[uop] = true;
+                unique_ops[unique_op_count++] = ggml_unary_op_name(uop);
+            }
+        } else if (node->op != GGML_OP_NONE) {
+            if (!op_seen[node->op]) {
+                op_seen[node->op] = true;
+                unique_ops[unique_op_count++] = ggml_op_name(node->op);
+            }
+        }
+    }
+
+    // Sort the operator names alphabetically (simple bubble sort)
+    for (int i = 0; i < unique_op_count - 1; i++) {
+        for (int j = 0; j < unique_op_count - i - 1; j++) {
+            if (strcmp(unique_ops[j], unique_ops[j + 1]) > 0) {
+                const char * temp = unique_ops[j];
+                unique_ops[j] = unique_ops[j + 1];
+                unique_ops[j + 1] = temp;
+            }
+        }
+    }
+
+    // Write to file
+    fprintf(fp, "Found %d unique operator types:\n", unique_op_count);
+    fprintf(fp, "--------------------------------------------------------------------------------\n");
+    for (int i = 0; i < unique_op_count; i++) {
+        fprintf(fp, "%s\n", unique_ops[i]);
+    }
+    fprintf(fp, "--------------------------------------------------------------------------------\n");
+
+    fclose(fp);
+    GGML_LOG_INFO("Operator list exported to '%s'\n", filename);
+}
+
 static int ggml_node_list_find_tensor(const struct ggml_cgraph * cgraph,
                                       const int *                idxs,
                                       int                        count,

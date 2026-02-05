@@ -466,6 +466,12 @@ extern "C" {
     // Frees all allocated memory
     LLAMA_API void llama_free(struct llama_context * ctx);
 
+    // Export computation graph operators to a file
+    LLAMA_API void llama_export_graph_ops(struct llama_context * ctx, const char * filename);
+
+    // Print detailed computation graph information
+    LLAMA_API void llama_print_graph_detailed(struct llama_context * ctx);
+
     LLAMA_API int64_t llama_time_us(void);
 
     LLAMA_API size_t llama_max_devices(void);

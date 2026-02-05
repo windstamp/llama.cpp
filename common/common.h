@@ -424,6 +424,10 @@ struct common_params {
 
     bool single_turn       = false; // single turn chat conversation
 
+    // graph export
+    bool export_graph_ops  = false; // export computation graph operators to file
+    std::string export_graph_ops_file = "operators.txt"; // output file for operator list
+
     ggml_type cache_type_k = GGML_TYPE_F16; // KV cache data type for the K
     ggml_type cache_type_v = GGML_TYPE_F16; // KV cache data type for the V
 

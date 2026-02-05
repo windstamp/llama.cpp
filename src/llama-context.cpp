@@ -2985,3 +2985,37 @@ void llama_opt_epoch(
         callback_train,
         callback_eval);
 }
+
+//
+// graph export
+//
+
+void llama_export_graph_ops(struct llama_context * ctx, const char * filename) {
+    if (!ctx || !filename) {
+        return;
+    }
+    
+    // Get the computation graph from the most recent evaluation
+    auto * gf_res = ctx->get_gf_res_reserve();
+    if (gf_res) {
+        auto * gf = gf_res->get_gf();
+        if (gf) {
+            ggml_graph_export_ops(gf, filename);
+        }
+    }
+}
+
+void llama_print_graph_detailed(struct llama_context * ctx) {
+    if (!ctx) {
+        return;
+    }
+    
+    // Get the computation graph from the most recent evaluation
+    auto * gf_res = ctx->get_gf_res_reserve();
+    if (gf_res) {
+        auto * gf = gf_res->get_gf();
+        if (gf) {
+            ggml_graph_print_detailed(gf);
+        }
+    }
+}

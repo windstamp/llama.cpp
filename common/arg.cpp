@@ -2033,6 +2033,14 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
+        {"--export-ops"}, "FNAME",
+        string_format("export computation graph operators to file (default: %s)", params.export_graph_ops_file.c_str()),
+        [](common_params & params, const std::string & value) {
+            params.export_graph_ops = true;
+            params.export_graph_ops_file = value;
+        }
+    ));
+    add_opt(common_arg(
         {"--override-kv"}, "KEY=TYPE:VALUE",
         "advanced option to override model metadata by key. may be specified multiple times.\n"
         "types: int, float, bool, str. example: --override-kv tokenizer.ggml.add_bos_token=bool:false",

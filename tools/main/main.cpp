@@ -531,6 +531,7 @@ int main(int argc, char ** argv) {
     bool input_echo           = true;
     bool display              = true;
     bool need_to_save_session = !path_session.empty() && n_matching_session_tokens < embd_inp.size();
+    bool graph_exported       = false; // track if computation graph has been exported
 
     int n_past             = 0;
     int n_remain           = params.n_predict;
@@ -685,6 +686,13 @@ int main(int argc, char ** argv) {
                 if (llama_decode(ctx, llama_batch_get_one(&embd[i], n_eval))) {
                     LOG_ERR("%s : failed to eval\n", __func__);
                     return 1;
+                }
+
+                // Export computation graph operators after first successful decode
+                if (params.export_graph_ops && !graph_exported) {
+                    llama_export_graph_ops(ctx, params.export_graph_ops_file.c_str());
+                    LOG_INF("Exported computation graph operators to: %s\n", params.export_graph_ops_file.c_str());
+                    graph_exported = true;
                 }
 
                 n_past += n_eval;
